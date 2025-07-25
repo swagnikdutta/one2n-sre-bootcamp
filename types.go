@@ -2,19 +2,68 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
+type Student struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
 type Server struct {
+	db *sql.DB
 }
 
-func (s *Server) listStudents(w http.ResponseWriter, request *http.Request) {
+func NewServer(db *sql.DB) *Server {
+	s := &Server{
+		db: db,
+	}
+	return s
+}
+
+func (s *Server) initDB() {
+	_, err := s.db.Exec(createTableSyntax)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) addStudent(w http.ResponseWriter, request *http.Request) {
+func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
+	var student Student
 
+	err := json.NewDecoder(r.Body).Decode(&student)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Printf("Student: %+v\n", student)
+
+	stmt, err := s.db.Prepare(insertSyntax)
+	if err != nil {
+		http.Error(w, "Failed to prepare insert statement", http.StatusInternalServerError)
+		log.Printf("Failed to prepare insert statement. Error: %v", err)
+		return
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(nil, student.Name, student.Age)
+	if err != nil {
+		http.Error(w, "Failed to insert student", http.StatusInternalServerError)
+		log.Printf("Failed to insert student. Error: %v", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write([]byte("Student added successfully"))
 }
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {

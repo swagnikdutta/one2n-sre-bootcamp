@@ -1,12 +1,23 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
 	studentId = "studentId"
+
+	createTableSyntax = `create table if not exists students (
+		id integer primary key autoincrement,
+		name text not null,
+		age integer 
+	)`
+
+	insertSyntax = `insert into students (id, name, age) values (?, ?, ?)`
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {
@@ -18,13 +29,21 @@ func NewRequestMultiplexer(server *Server) http.Handler {
 }
 
 func main() {
-	server := new(Server)
+	db, err := sql.Open("sqlite3", "students.db")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	server := NewServer(db)
 	httpServer := &http.Server{
 		Addr:    ":8000",
 		Handler: NewRequestMultiplexer(server),
 	}
 
-	err := httpServer.ListenAndServe()
+	server.initDB()
+
+	err = httpServer.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
 	}
