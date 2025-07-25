@@ -18,6 +18,7 @@ const (
 	)`
 
 	insertSyntax = `insert into students (id, name, age) values (?, ?, ?)`
+	listSyntax   = `select * from students`
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {

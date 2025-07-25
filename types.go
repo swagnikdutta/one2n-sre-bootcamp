@@ -33,7 +33,37 @@ func (s *Server) initDB() {
 }
 
 func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.db.Query(listSyntax)
+	if err != nil {
+		log.Printf("Error querying students. Error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
+	var students []Student
+	for rows.Next() {
+		var id, age int
+		var name string
+
+		if err := rows.Scan(&id, &name, &age); err != nil {
+			log.Printf("Error scanning student row. Error: %v", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		students = append(students, Student{
+			Name: name,
+			Age:  age,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(students)
+	if err != nil {
+		log.Printf("Error encoding response. Error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
