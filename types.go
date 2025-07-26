@@ -151,7 +151,34 @@ func (s *Server) getStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
+	studentId, ok := r.Context().Value(studentIdKey).(string)
+	if !ok {
+		log.Println("Error doing type assertion on student id")
+		http.Error(w, "invalid or missing student id", http.StatusBadRequest)
+		return
+	}
 
+	var student Student
+	if err := json.NewDecoder(r.Body).Decode(&student); err != nil {
+		http.Error(w, "request body missing or invalid", http.StatusBadRequest)
+		return
+	}
+
+	res, err := s.db.Exec(updateSyntax, student.Name, student.Age, studentId)
+	if err != nil {
+		log.Println("Error updating student. Error: ", err.Error())
+		http.Error(w, "Failed to update student", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		log.Println("Student not found, no rows were affected")
+		http.Error(w, "Student not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) deleteStudent(w http.ResponseWriter, r *http.Request) {
