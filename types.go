@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type contextKey string
@@ -101,8 +102,8 @@ func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
-	print(r.URL.Path)
-	ctx := context.WithValue(r.Context(), studentIdKey, r.URL.Path)
+	id := strings.Split(strings.Trim(r.URL.Path, "/"), "/")[1]
+	ctx := context.WithValue(r.Context(), studentIdKey, id)
 
 	switch r.Method {
 	case http.MethodGet:
@@ -154,5 +155,26 @@ func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteStudent(w http.ResponseWriter, r *http.Request) {
+	studentId, ok := r.Context().Value(studentIdKey).(string)
+	if !ok {
+		log.Println("Error doing type assertion on student id")
+		http.Error(w, "invalid or missing student id", http.StatusBadRequest)
+		return
+	}
 
+	res, err := s.db.Exec(deleteSyntax, studentId)
+	if err != nil {
+		log.Printf("Error deleting student with id %q", studentId)
+		http.Error(w, "Failed to delete student", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		log.Println("Student not found, no rows were affected")
+		http.Error(w, "Student not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

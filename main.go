@@ -19,6 +19,7 @@ const (
 	insertSyntax        = `insert into students (id, name, age) values (?, ?, ?)`
 	listSyntax          = `select * from students`
 	selectStudentSyntax = `select * from students where id = ?`
+	deleteSyntax        = `delete from students where id = ?`
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {
