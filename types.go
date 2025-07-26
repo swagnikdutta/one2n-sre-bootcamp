@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 )
+
+type contextKey string
 
 type Student struct {
 	Name string `json:"name"`
@@ -67,15 +69,17 @@ func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "", http.StatusNotFound)
+	}
+
 	var student Student
 
 	err := json.NewDecoder(r.Body).Decode(&student)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "request body missing or invalid", http.StatusBadRequest)
 		return
 	}
-
-	fmt.Printf("Student: %+v\n", student)
 
 	stmt, err := s.db.Prepare(insertSyntax)
 	if err != nil {
@@ -98,7 +102,7 @@ func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
 	print(r.URL.Path)
-	ctx := context.WithValue(r.Context(), studentId, r.URL.Path)
+	ctx := context.WithValue(r.Context(), studentIdKey, r.URL.Path)
 
 	switch r.Method {
 	case http.MethodGet:
@@ -111,15 +115,38 @@ func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentId).(string)
+	studentId, ok := r.Context().Value(studentIdKey).(string)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Invalid path param"))
+		log.Println("Error doing type assertion on student id")
+		http.Error(w, "invalid or missing student id", http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(fmt.Sprintf("Student id got:%q", studentId)))
+	row := s.db.QueryRow(selectStudentSyntax, studentId)
+
+	var id, age int
+	var name string
+
+	if err := row.Scan(&id, &name, &age); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Printf("No student found with id %q", studentId)
+			http.Error(w, "Student not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("Error scanning student row: %v", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	student := Student{name, age}
+
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(student)
+	if err != nil {
+		log.Println("Error encoding response. Error: ", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {

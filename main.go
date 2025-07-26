@@ -9,16 +9,16 @@ import (
 )
 
 const (
-	studentId = "studentId"
+	studentIdKey contextKey = "studentId"
 
 	createTableSyntax = `create table if not exists students (
 		id integer primary key autoincrement,
 		name text not null,
 		age integer 
 	)`
-
-	insertSyntax = `insert into students (id, name, age) values (?, ?, ?)`
-	listSyntax   = `select * from students`
+	insertSyntax        = `insert into students (id, name, age) values (?, ?, ?)`
+	listSyntax          = `select * from students`
+	selectStudentSyntax = `select * from students where id = ?`
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {
