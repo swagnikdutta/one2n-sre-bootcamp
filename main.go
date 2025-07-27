@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -35,6 +37,11 @@ func NewRequestMultiplexer(server *Server) http.Handler {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	db, err := sql.Open(sqliteDriver, os.Getenv(dbPath))
 	if err != nil {
 		panic(err)
