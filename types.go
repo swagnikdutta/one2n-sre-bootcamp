@@ -106,8 +106,8 @@ func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.Split(strings.Trim(r.URL.Path, "/"), "/")[1]
-	ctx := context.WithValue(r.Context(), studentIdKey, id)
+	splits := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	ctx := context.WithValue(r.Context(), studentIdKey, splits[len(splits)-1])
 
 	switch r.Method {
 	case http.MethodGet:

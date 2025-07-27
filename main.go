@@ -30,9 +30,12 @@ const (
 
 func NewRequestMultiplexer(server *Server) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/students", server.listStudents)
-	mux.HandleFunc("/students/add", server.addStudent)
-	mux.HandleFunc("/students/{id}", server.studentHandler)
+	mux.HandleFunc("/api/v1/students", server.listStudents)
+	mux.HandleFunc("/api/v1/students/add", server.addStudent)
+	mux.HandleFunc("/api/v1/students/{id}", server.studentHandler)
+	mux.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	return mux
 }
 
