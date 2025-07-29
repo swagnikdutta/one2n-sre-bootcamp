@@ -1,16 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 )
 
-type LogMessage string
-type ClientMessage string
+// type ClientMessage string
+//
+// func RespondWithError(w http.ResponseWriter, msg ClientMessage, status int) {
+// 	http.Error(w, string(msg), status)
+// }
 
-func RespondWithError(w http.ResponseWriter, logMsg LogMessage, clientMsg ClientMessage, status int) {
-	log.Println(logMsg)
-	fmt.Println(logMsg)
-	http.Error(w, string(clientMsg), status)
+func RespondWithError(w http.ResponseWriter, msg string, status int) {
+	http.Error(w, msg, status)
 }

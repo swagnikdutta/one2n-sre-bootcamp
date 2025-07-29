@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -18,96 +20,66 @@ type Student struct {
 }
 
 type Server struct {
-	db *sql.DB
+	store StudentStore
 }
 
-func NewServer(db *sql.DB) *Server {
-	s := &Server{
-		db: db,
+func NewServer(s StudentStore) *Server {
+	// TODO: pass in a logger
+	srv := &Server{
+		store: s,
 	}
-	return s
-}
-
-func (s *Server) initDB() {
-	_, err := s.db.Exec(createTableSyntax)
-	if err != nil {
-		panic(err)
-	}
+	return srv
 }
 
 func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.Query(listSyntax)
+	students, err := s.store.ListStudents()
 	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error querying students from database. Error: %v", err))
-		clientMessage := ClientMessage("Error fetching students")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	var students []Student
-	for rows.Next() {
-		var id, age int
-		var name string
-
-		if err := rows.Scan(&id, &name, &age); err != nil {
-			logMessage := LogMessage(fmt.Sprintf("Error scanning student row. Error: %v", err.Error()))
-			clientMessage := ClientMessage("Internal error")
-			RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
-			return
-		}
-
-		students = append(students, Student{name, age})
+		RespondWithError(w, "Failed to list students", http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(students)
 	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error encoding response. Error: %v", err))
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
+		log.Printf("Error encoding response. Error: %v", err)
+		RespondWithError(w, "Internal error", http.StatusInternalServerError)
 	}
 }
 
 func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "", http.StatusNotFound)
+		RespondWithError(w, "", http.StatusNotFound)
 	}
 
 	var student Student
-
-	err := json.NewDecoder(r.Body).Decode(&student)
-	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error unmarshalling request body. Error: %v", err))
-		clientMessage := ClientMessage("Invalid request body")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
+	if err := json.NewDecoder(r.Body).Decode(&student); err != nil {
+		log.Printf("Error unmarshalling request body")
+		RespondWithError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	stmt, err := s.db.Prepare(insertSyntax)
+	id, err := s.store.CreateStudent(student)
 	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error preparing insert statement. Error: %v", err))
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
-		return
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(nil, student.Name, student.Age)
-	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Failed to insert student. Error: %v", err))
-		clientMessage := ClientMessage("Failed to insert student")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
+		log.Printf("Error creating student. Error: %v", err)
+		RespondWithError(w, "Error creating student", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte("Student added successfully"))
+	// TODO: why not set application type content/json
+	_, _ = w.Write([]byte(fmt.Sprintf("Student created with id: %s", id)))
 }
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
 	splits := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	ctx := context.WithValue(r.Context(), studentIdKey, splits[len(splits)-1])
+
+	studentId, err := strconv.Atoi(splits[len(splits)-1])
+	if err != nil {
+		log.Printf("Error type casting studentId %q to integer. Error: %v", studentId, err)
+		http.Error(w, "Invalid studentId %q", studentId)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), studentIdKey, studentId)
 
 	switch r.Method {
 	case http.MethodGet:
@@ -120,75 +92,56 @@ func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(string)
+	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
-		logMessage := LogMessage("Error asserting type of studentId")
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusBadRequest)
+		log.Printf("Error asserting type of student id %q", studentId)
+		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
 
-	row := s.db.QueryRow(selectStudentSyntax, studentId)
-
-	var id, age int
-	var name string
-
-	if err := row.Scan(&id, &name, &age); err != nil {
+	student, err := s.store.GetStudent(studentId)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logMessage := LogMessage(fmt.Sprintf("No student found with id %q", studentId))
-			clientMessage := ClientMessage("Student not found")
-			RespondWithError(w, logMessage, clientMessage, http.StatusNotFound)
+			msg := fmt.Sprintf("No student found with id %q", studentId)
+			log.Println(msg)
+			RespondWithError(w, msg, http.StatusNotFound)
 			return
 		}
 
-		logMessage := LogMessage(fmt.Sprintf("Error scanning student row. Error: %v", err))
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
+		msg := fmt.Sprintf("Error getting student with id %q. Error: %v", studentId, err)
+		log.Println(msg)
+		RespondWithError(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	student := Student{name, age}
-
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(student)
-	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error encoding response. Error: %v", err.Error()))
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
+	if err = json.NewEncoder(w).Encode(student); err != nil {
+		log.Printf("Error encoding response. Error: %v", err)
+		RespondWithError(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
 }
 
 func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(string)
+	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
-		logMessage := LogMessage("Error asserting type of studentId")
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusBadRequest)
+		log.Printf("Error asserting type of student id %q", studentId)
+		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
 
-	var student Student
-	if err := json.NewDecoder(r.Body).Decode(&student); err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error reading request body. Error: %v", err))
-		clientMessage := ClientMessage("Invalid request body")
-		RespondWithError(w, logMessage, clientMessage, http.StatusBadRequest)
+	var payload Student
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		log.Println("Error unmarshalling request body")
+		RespondWithError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	res, err := s.db.Exec(updateSyntax, student.Name, student.Age, studentId)
+	err := s.store.UpdateStudent(studentId, payload)
 	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error updating student. Error: %v", err))
-		clientMessage := ClientMessage("Error updating student")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
-		return
-	}
-
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		logMessage := LogMessage("Student not found, no rows were affected")
-		clientMessage := ClientMessage("Student not found")
-		RespondWithError(w, logMessage, clientMessage, http.StatusNotFound)
+		msg := fmt.Sprintf("Error updating student with id %q. Error: %v", studentId, err)
+		log.Println(msg)
+		RespondWithError(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -196,29 +149,19 @@ func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(string)
+	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
-		logMessage := LogMessage("Error asserting type of studentId")
-		clientMessage := ClientMessage("Internal error")
-		RespondWithError(w, logMessage, clientMessage, http.StatusBadRequest)
+		log.Printf("Error asserting type of student id %q", studentId)
+		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
 
-	res, err := s.db.Exec(deleteSyntax, studentId)
-	if err != nil {
-		logMessage := LogMessage(fmt.Sprintf("Error deleting student with id %q", studentId))
-		clientMessage := ClientMessage("Failed to delete student")
-		RespondWithError(w, logMessage, clientMessage, http.StatusInternalServerError)
-		return
-	}
-
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		logMessage := LogMessage("Student not found, no rows were affected")
-		clientMessage := ClientMessage("Student not found")
-		RespondWithError(w, logMessage, clientMessage, http.StatusNotFound)
+	if err := s.store.DeleteStudent(studentId); err != nil {
+		log.Printf("Error deleting student with id %d. Error: %v", studentId, err)
+		RespondWithError(w, "Error deleting student", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	_, _ = w.Write([]byte("student deleted"))
 }

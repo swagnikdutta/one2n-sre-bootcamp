@@ -1,31 +1,18 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	studentIdKey contextKey = "studentId"
-	sqliteDriver            = "sqlite3"
-	dbPath                  = "DB_PATH"
-
-	createTableSyntax = `create table if not exists students (
-		id integer primary key autoincrement,
-		name text not null,
-		age integer 
-	)`
-	insertSyntax        = `insert into students (id, name, age) values (?, ?, ?)`
-	listSyntax          = `select * from students`
-	selectStudentSyntax = `select * from students where id = ?`
-	deleteSyntax        = `delete from students where id = ?`
-	updateSyntax        = `update students set name = ?, age = ? where id = ?`
+	studentIdKey     contextKey = "studentId"
+	sqliteDriverName            = "sqlite3"
+	dbPath                      = "DB_PATH"
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {
@@ -45,19 +32,12 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	db, err := sql.Open(sqliteDriver, os.Getenv(dbPath))
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	server := NewServer(db)
+	sqliteStore := NewSQLiteDataStore()
+	server := NewServer(sqliteStore)
 	httpServer := &http.Server{
 		Addr:    ":8000",
 		Handler: NewRequestMultiplexer(server),
 	}
-
-	server.initDB()
 
 	fmt.Println("Running http server on port 8000")
 	err = httpServer.ListenAndServe()
