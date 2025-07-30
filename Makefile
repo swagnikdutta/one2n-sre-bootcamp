@@ -16,3 +16,5 @@ clean:
 	rm -f $(APP_NAME)
 
 generate-mocks:
+	mockgen -destination=mocks/mock_store.go -package=mocks github.com/swagnikdutta/one2n-sre-bootcamp/student Store
+
