@@ -1,4 +1,4 @@
-package main
+package student
 
 import (
 	"context"
@@ -21,10 +21,10 @@ type Student struct {
 }
 
 type Server struct {
-	store StudentStore
+	store Store
 }
 
-func NewServer(s StudentStore) *Server {
+func NewServer(s Store) *Server {
 	// TODO: pass in a logger
 	srv := &Server{
 		store: s,
@@ -32,7 +32,7 @@ func NewServer(s StudentStore) *Server {
 	return srv
 }
 
-func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
 	students, err := s.store.ListStudents()
 	if err != nil {
 		RespondWithError(w, "Failed to list students", http.StatusInternalServerError)
@@ -46,7 +46,7 @@ func (s *Server) listStudents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) AddStudent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		RespondWithError(w, "", http.StatusNotFound)
 	}
@@ -70,7 +70,7 @@ func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(fmt.Sprintf("Student created with id: %d", id)))
 }
 
-func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
 	splits := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 
 	studentId, err := strconv.Atoi(splits[len(splits)-1])
@@ -84,15 +84,15 @@ func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		s.getStudent(w, r.WithContext(ctx))
+		s.GetStudent(w, r.WithContext(ctx))
 	case http.MethodPatch:
-		s.updateStudent(w, r.WithContext(ctx))
+		s.UpdateStudent(w, r.WithContext(ctx))
 	case http.MethodDelete:
-		s.deleteStudent(w, r.WithContext(ctx))
+		s.DeleteStudent(w, r.WithContext(ctx))
 	}
 }
 
-func (s *Server) getStudent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)
@@ -123,7 +123,7 @@ func (s *Server) getStudent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)
@@ -149,7 +149,7 @@ func (s *Server) updateStudent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) deleteStudent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(studentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)

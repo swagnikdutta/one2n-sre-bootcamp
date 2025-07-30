@@ -7,20 +7,14 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/swagnikdutta/one2n-sre-bootcamp/student"
 )
 
-const (
-	studentIdKey       contextKey = "studentId"
-	sqliteDriverName              = "sqlite3"
-	dbPath                        = "DB_PATH"
-	errStudentNotFound            = "student not found"
-)
-
-func NewRequestMultiplexer(server *Server) http.Handler {
+func NewRequestMultiplexer(server *student.Server) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/students", server.listStudents)
-	mux.HandleFunc("/api/v1/students/add", server.addStudent)
-	mux.HandleFunc("/api/v1/students/{id}", server.studentHandler)
+	mux.HandleFunc("/api/v1/students", server.ListStudents)
+	mux.HandleFunc("/api/v1/students/add", server.AddStudent)
+	mux.HandleFunc("/api/v1/students/{id}", server.StudentHandler)
 	mux.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -33,8 +27,8 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	sqliteStore := NewSQLiteDataStore()
-	server := NewServer(sqliteStore)
+	sqliteStore := student.NewSQLiteDataStore()
+	server := student.NewServer(sqliteStore)
 	httpServer := &http.Server{
 		Addr:    ":8000",
 		Handler: NewRequestMultiplexer(server),

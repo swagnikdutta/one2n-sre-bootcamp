@@ -14,3 +14,5 @@ vet:
 
 clean:
 	rm -f $(APP_NAME)
+
+generate-mocks:

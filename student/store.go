@@ -1,4 +1,4 @@
-package main
+package student
 
 import (
 	"database/sql"
@@ -6,6 +6,14 @@ import (
 	"log"
 	"os"
 )
+
+type Store interface {
+	CreateStudent(s Student) (int, error)
+	GetStudent(studentId int) (*Student, error)
+	UpdateStudent(id int, s Student) error
+	DeleteStudent(id int) error
+	ListStudents() ([]Student, error)
+}
 
 type SQLiteDataStore struct {
 	db *sql.DB
