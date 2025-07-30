@@ -15,6 +15,7 @@ import (
 type contextKey string
 
 type Student struct {
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
@@ -66,7 +67,7 @@ func (s *Server) addStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	// TODO: why not set application type content/json
-	_, _ = w.Write([]byte(fmt.Sprintf("Student created with id: %s", id)))
+	_, _ = w.Write([]byte(fmt.Sprintf("Student created with id: %d", id)))
 }
 
 func (s *Server) studentHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +159,13 @@ func (s *Server) deleteStudent(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.store.DeleteStudent(studentId); err != nil {
 		log.Printf("Error deleting student with id %d. Error: %v", studentId, err)
-		RespondWithError(w, "Error deleting student", http.StatusInternalServerError)
+
+		errMsg, statusCode := "error deleting student", http.StatusInternalServerError
+		if err.Error() == errStudentNotFound {
+			errMsg, statusCode = "student not found", http.StatusNotFound
+		}
+
+		RespondWithError(w, errMsg, statusCode)
 		return
 	}
 

@@ -68,7 +68,7 @@ func (s *SQLiteDataStore) GetStudent(studentId int) (*Student, error) {
 		return nil, err
 	}
 
-	student := &Student{name, age}
+	student := &Student{id, name, age}
 	return student, nil
 }
 
@@ -85,7 +85,7 @@ func (s *SQLiteDataStore) UpdateStudent(studentId int, student Student) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("student not found")
+		return errors.New(errStudentNotFound)
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func (s *SQLiteDataStore) DeleteStudent(studentId int) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("student not found")
+		return errors.New(errStudentNotFound)
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func (s *SQLiteDataStore) ListStudents() ([]Student, error) {
 		if err := rows.Scan(&id, &name, &age); err != nil {
 			return nil, err
 		}
-		students = append(students, Student{name, age})
+		students = append(students, Student{id, name, age})
 	}
 	return students, nil
 }

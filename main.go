@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	studentIdKey     contextKey = "studentId"
-	sqliteDriverName            = "sqlite3"
-	dbPath                      = "DB_PATH"
+	studentIdKey       contextKey = "studentId"
+	sqliteDriverName              = "sqlite3"
+	dbPath                        = "DB_PATH"
+	errStudentNotFound            = "student not found"
 )
 
 func NewRequestMultiplexer(server *Server) http.Handler {
