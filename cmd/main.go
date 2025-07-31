@@ -13,7 +13,7 @@ import (
 func NewRequestMultiplexer(server *student.Server) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/students", server.ListStudents)
-	mux.HandleFunc("/api/v1/students/add", server.AddStudent)
+	mux.HandleFunc("/api/v1/students/add", server.CreateStudent)
 	mux.HandleFunc("/api/v1/students/{id}", server.StudentHandler)
 	mux.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

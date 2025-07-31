@@ -21,19 +21,19 @@ type Student struct {
 }
 
 type Server struct {
-	store Store
+	Store Store
 }
 
 func NewServer(s Store) *Server {
 	// TODO: pass in a logger
 	srv := &Server{
-		store: s,
+		Store: s,
 	}
 	return srv
 }
 
 func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
-	students, err := s.store.ListStudents()
+	students, err := s.Store.ListStudents()
 	if err != nil {
 		RespondWithError(w, "Failed to list students", http.StatusInternalServerError)
 	}
@@ -46,7 +46,7 @@ func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) AddStudent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) CreateStudent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		RespondWithError(w, "", http.StatusNotFound)
 	}
@@ -58,7 +58,7 @@ func (s *Server) AddStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.store.CreateStudent(student)
+	id, err := s.Store.CreateStudent(student)
 	if err != nil {
 		log.Printf("Error creating student. Error: %v", err)
 		RespondWithError(w, "Error creating student", http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	student, err := s.store.GetStudent(studentId)
+	student, err := s.Store.GetStudent(studentId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			msg := fmt.Sprintf("No student found with id %q", studentId)
@@ -138,7 +138,7 @@ func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.store.UpdateStudent(studentId, payload)
+	err := s.Store.UpdateStudent(studentId, payload)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating student with id %q. Error: %v", studentId, err)
 		log.Println(msg)
@@ -157,7 +157,7 @@ func (s *Server) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.store.DeleteStudent(studentId); err != nil {
+	if err := s.Store.DeleteStudent(studentId); err != nil {
 		log.Printf("Error deleting student with id %d. Error: %v", studentId, err)
 
 		errMsg, statusCode := "error deleting student", http.StatusInternalServerError
