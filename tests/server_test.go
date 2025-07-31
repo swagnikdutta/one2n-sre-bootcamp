@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -13,6 +14,12 @@ import (
 	"github.com/swagnikdutta/one2n-sre-bootcamp/student"
 	"go.uber.org/mock/gomock"
 )
+
+func NewTestLogger() *slog.Logger {
+	buf := new(bytes.Buffer)
+	logger := slog.New(slog.NewJSONHandler(buf, nil))
+	return logger
+}
 
 func TestCreateStudent_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -113,7 +120,8 @@ func TestCreateStudent_Failure_BadRequest(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 
 	s := &student.Server{
-		Store: mockStore,
+		Store:  mockStore,
+		Logger: NewTestLogger(),
 	}
 	s.CreateStudent(response, request)
 
@@ -179,7 +187,8 @@ func TestGetStudent_BadRequest(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 
 	s := &student.Server{
-		Store: mockStore,
+		Store:  mockStore,
+		Logger: NewTestLogger(),
 	}
 	s.GetStudent(response, request)
 
