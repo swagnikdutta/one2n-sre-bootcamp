@@ -36,6 +36,7 @@ func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
 	students, err := s.Store.ListStudents()
 	if err != nil {
 		RespondWithError(w, "Failed to list students", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -43,12 +44,14 @@ func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error encoding response. Error: %v", err)
 		RespondWithError(w, "Internal error", http.StatusInternalServerError)
+		return
 	}
 }
 
 func (s *Server) CreateStudent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		RespondWithError(w, "", http.StatusNotFound)
+		RespondWithError(w, "Not Found", http.StatusNotFound)
+		return
 	}
 
 	var student Student
