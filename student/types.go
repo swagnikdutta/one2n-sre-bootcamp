@@ -83,7 +83,7 @@ func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), studentIdKey, studentId)
+	ctx := context.WithValue(r.Context(), StudentIdKey, studentId)
 
 	switch r.Method {
 	case http.MethodGet:
@@ -96,7 +96,7 @@ func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(int)
+	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
@@ -127,7 +127,7 @@ func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(int)
+	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
@@ -153,7 +153,7 @@ func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteStudent(w http.ResponseWriter, r *http.Request) {
-	studentId, ok := r.Context().Value(studentIdKey).(int)
+	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
 		log.Printf("Error asserting type of student id %q", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)

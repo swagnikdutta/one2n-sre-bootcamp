@@ -1,7 +1,7 @@
 package student
 
 const (
-	studentIdKey     contextKey = "studentId"
+	StudentIdKey     contextKey = "studentId"
 	sqliteDriverName            = "sqlite3"
 
 	// env variables
