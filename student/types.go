@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -21,13 +22,16 @@ type Student struct {
 }
 
 type Server struct {
-	Store Store
+	Store  Store
+	Logger *slog.Logger
 }
 
 func NewServer(s Store) *Server {
-	// TODO: pass in a logger
+	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	logger := slog.New(jsonHandler)
 	srv := &Server{
-		Store: s,
+		Store:  s,
+		Logger: logger,
 	}
 	return srv
 }
@@ -42,7 +46,7 @@ func (s *Server) ListStudents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(students)
 	if err != nil {
-		log.Printf("Error encoding response. Error: %v", err)
+		s.Logger.Error("error encoding response", "error", err)
 		RespondWithError(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -56,14 +60,14 @@ func (s *Server) CreateStudent(w http.ResponseWriter, r *http.Request) {
 
 	var student Student
 	if err := json.NewDecoder(r.Body).Decode(&student); err != nil {
-		log.Printf("Error unmarshalling request body")
+		s.Logger.Error("error unmarshalling request body", "error", err)
 		RespondWithError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	id, err := s.Store.CreateStudent(student)
 	if err != nil {
-		log.Printf("Error creating student. Error: %v", err)
+		s.Logger.Error("error creating student", "error", err)
 		RespondWithError(w, "Error creating student", http.StatusInternalServerError)
 		return
 	}
@@ -78,7 +82,7 @@ func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
 
 	studentId, err := strconv.Atoi(splits[len(splits)-1])
 	if err != nil {
-		log.Printf("Error type casting studentId %q to integer. Error: %v", studentId, err)
+		s.Logger.Error("error type casting studentId to integer", "studentId", studentId, "error", err)
 		http.Error(w, "Invalid studentId %q", studentId)
 		return
 	}
@@ -98,7 +102,7 @@ func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
-		log.Printf("Error asserting type of student id %q", studentId)
+		s.Logger.Error("error asserting type of studentId", "studentId", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
@@ -107,20 +111,20 @@ func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			msg := fmt.Sprintf("No student found with id %q", studentId)
-			log.Println(msg)
+			s.Logger.Error("student not found", "studentId", studentId, "error", err)
 			RespondWithError(w, msg, http.StatusNotFound)
 			return
 		}
 
+		s.Logger.Error("error getting student", "studentId", studentId, "error", err)
 		msg := fmt.Sprintf("Error getting student with id %q. Error: %v", studentId, err)
-		log.Println(msg)
 		RespondWithError(w, msg, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(w).Encode(student); err != nil {
-		log.Printf("Error encoding response. Error: %v", err)
+		s.Logger.Error("error encoding response", "error", err)
 		RespondWithError(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -129,22 +133,22 @@ func (s *Server) GetStudent(w http.ResponseWriter, r *http.Request) {
 func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
-		log.Printf("Error asserting type of student id %q", studentId)
+		s.Logger.Error("error asserting type of studentId", "studentId", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
 
 	var payload Student
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		log.Println("Error unmarshalling request body")
+		s.Logger.Error("error unmarshalling request body", "error", err)
 		RespondWithError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	err := s.Store.UpdateStudent(studentId, payload)
 	if err != nil {
+		s.Logger.Error("error updating student", "studentId", studentId, "error", err)
 		msg := fmt.Sprintf("Error updating student with id %q. Error: %v", studentId, err)
-		log.Println(msg)
 		RespondWithError(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -155,13 +159,13 @@ func (s *Server) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 func (s *Server) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	studentId, ok := r.Context().Value(StudentIdKey).(int)
 	if !ok {
-		log.Printf("Error asserting type of student id %q", studentId)
+		s.Logger.Error("error asserting type of studentId", "studentId", studentId)
 		RespondWithError(w, "Invalid studentId", http.StatusBadRequest)
 		return
 	}
 
 	if err := s.Store.DeleteStudent(studentId); err != nil {
-		log.Printf("Error deleting student with id %d. Error: %v", studentId, err)
+		s.Logger.Error("error deleting student", "studentId", studentId, "error", err)
 
 		errMsg, statusCode := "error deleting student", http.StatusInternalServerError
 		if err.Error() == errStudentNotFound {
