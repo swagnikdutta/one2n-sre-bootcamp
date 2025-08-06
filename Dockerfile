@@ -13,11 +13,10 @@ COPY . .
 #RUN CGO_ENABLED=0 GOOS=linux go build -o appbin ./cmd
 
 # I am using go-sqlite3, which is a cgo package. If you want to build your app using go-sqlite3 you need a gcc compiler
-# present in your path.
+# present in your path, which is why CGO_ENABLED should be 1
 RUN apk add --no-cache gcc musl-dev
 # or use build-base for a complete set of tools — gcc, musl-dev, libc-dev, make, binutils and other core tools
 #RUN apk add --no-cache build-base
-
 RUN CGO_ENABLED=1 GOOS=linux go build -o appbin ./cmd
 
 
