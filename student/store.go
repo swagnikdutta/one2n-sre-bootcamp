@@ -20,6 +20,10 @@ type SQLiteDataStore struct {
 }
 
 func NewSQLiteDataStore() *SQLiteDataStore {
+	if os.Getenv(dbPath) == "" {
+		log.Fatalf("missing env variable :%q", dbPath)
+	}
+
 	db, err := sql.Open(sqliteDriverName, os.Getenv(dbPath))
 	if err != nil {
 		panic(err)

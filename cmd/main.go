@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/swagnikdutta/one2n-sre-bootcamp/student"
 )
@@ -22,10 +20,10 @@ func NewRequestMultiplexer(server *student.Server) http.Handler {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Error loading .env file")
+	// }
 
 	sqliteStore := student.NewSQLiteDataStore()
 	server := student.NewServer(sqliteStore)
@@ -35,7 +33,7 @@ func main() {
 	}
 
 	fmt.Println("Running http server on port 8000")
-	err = httpServer.ListenAndServe()
+	err := httpServer.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
 	}
