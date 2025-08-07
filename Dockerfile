@@ -1,5 +1,7 @@
 # stage 1
 FROM golang:1.24-alpine as builder
+ARG BINARY_NAME=studentstore-bin
+# when the image is built from the Makefile, the value of BINARY_NAME will be set to the value defined in the Makefile.
 WORKDIR /app
 COPY . .
 # CGO_ENABLED=0 makes the binary runner a statically linked binary.
@@ -16,13 +18,14 @@ COPY . .
 # present in your path, which is why CGO_ENABLED should be 1
 RUN apk add --no-cache gcc musl-dev
 # or use build-base for a complete set of tools — gcc, musl-dev, libc-dev, make, binutils and other core tools
-#RUN apk add --no-cache build-base
-RUN CGO_ENABLED=1 GOOS=linux go build -o appbin ./cmd
+# RUN apk add --no-cache build-base
+RUN CGO_ENABLED=1 GOOS=linux go build -o ${BINARY_NAME} ./cmd
 
 
 ## stage 2
 FROM alpine:3.22
 WORKDIR /app
 EXPOSE 8000
-COPY --from=builder /app/appbin .
-CMD ["./appbin"]
+COPY --from=builder /app/${BINARY_NAME} .
+CMD ["./studentstore-bin"]
+
