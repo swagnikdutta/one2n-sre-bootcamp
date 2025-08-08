@@ -1,0 +1,14 @@
+# local db, test artifacts, coverage
+students.db
+coverage.out
+
+mocks/
+tests/
+docs/
+
+.git
+.gitignore
+.idea/
+
+README.md
+Makefile
