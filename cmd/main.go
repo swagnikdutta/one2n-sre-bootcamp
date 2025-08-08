@@ -20,11 +20,6 @@ func NewRequestMultiplexer(server *student.Server) http.Handler {
 }
 
 func main() {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Fatalf("Error loading .env file")
-	// }
-
 	sqliteStore := student.NewSQLiteDataStore()
 	server := student.NewServer(sqliteStore)
 	httpServer := &http.Server{

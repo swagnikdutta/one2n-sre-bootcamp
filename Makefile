@@ -1,6 +1,4 @@
-BINARY_NAME=studentstore-bin
 DB_URL=sqlite3://students.db
-
 IMAGE_NAME=one2n
 IMAGE_TAG=0.1.0
 DB_PATH=students.db
@@ -13,7 +11,7 @@ run:
 	go run ./cmd
 
 build:
-	go build -o $(BINARY_NAME) ./cmd
+	go build -o main ./cmd
 
 fmt:
 	go fmt ./...
@@ -22,7 +20,7 @@ vet:
 	go vet ./...
 
 clean:
-	rm -f $(BINARY_NAME)
+	rm -f main
 
 coverage:
 	go test -coverprofile=coverage.out ./...
@@ -40,8 +38,8 @@ migrate-down:
 migrate-force-drop:
 	rm -f students.db
 
-docker-build:
-	docker build --build-arg BINARY_NAME=$(BINARY_NAME) -t $(IMAGE_NAME):$(IMAGE_TAG) .
+docker-build-alpine:
+	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) -f alpine.Dockerfile .
 
 docker-run:
 	docker run --rm -it -e DB_PATH=$(DB_PATH) -p $(HOST_PORT):$(CONTAINER_PORT) $(IMAGE_NAME):$(IMAGE_TAG)
