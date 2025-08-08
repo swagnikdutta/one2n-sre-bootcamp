@@ -21,10 +21,10 @@ COPY . .
 # present in your path, which is why CGO_ENABLED should be 1 (written in documentation). Thus we install gcc and musl-dev (used
 # for installing headers and static libraries) using apk (alpine's package manager). Or use build-base for a complete
 # set of tools — gcc, musl-dev, libc-dev, make, binutils and other core tools.
-RUN apk add --no-cache gcc musl-dev
-# RUN apk add --no-cache build-base
 
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o main ./cmd
+RUN apk add --no-cache gcc musl-dev && \
+    CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o main ./cmd
+# Alternately use build-base. RUN apk add --no-cache build-base
 
 
 ## stage 2
