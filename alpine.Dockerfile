@@ -24,7 +24,7 @@ COPY . .
 RUN apk add --no-cache gcc musl-dev
 # RUN apk add --no-cache build-base
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o main ./cmd
 
 
 ## stage 2
