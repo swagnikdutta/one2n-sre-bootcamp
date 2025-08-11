@@ -20,8 +20,10 @@ func NewRequestMultiplexer(server *student.Server) http.Handler {
 }
 
 func main() {
-	sqliteStore := student.NewSQLiteDataStore()
-	server := student.NewServer(sqliteStore)
+	pgStore := student.NewPostgresDataStore()
+	defer pgStore.Pool.Close()
+
+	server := student.NewServer(pgStore)
 	httpServer := &http.Server{
 		Addr:    ":8000",
 		Handler: NewRequestMultiplexer(server),

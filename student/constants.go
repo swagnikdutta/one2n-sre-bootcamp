@@ -5,7 +5,8 @@ const (
 	sqliteDriverName            = "sqlite3"
 
 	// env variables
-	dbPath = "DB_PATH"
+	dbPath      = "DB_PATH"
+	databaseUrl = "DATABASE_URL"
 
 	// errors
 	errStudentNotFound = "student not found"

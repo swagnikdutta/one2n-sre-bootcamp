@@ -7,14 +7,6 @@ import (
 	"os"
 )
 
-type Store interface {
-	CreateStudent(s Student) (int, error)
-	GetStudent(studentId int) (*Student, error)
-	UpdateStudent(id int, s Student) error
-	DeleteStudent(id int) error
-	ListStudents() ([]Student, error)
-}
-
 type SQLiteDataStore struct {
 	db *sql.DB
 }
@@ -45,7 +37,7 @@ func (s *SQLiteDataStore) init() error {
 	createQuery := `create table if not exists students (
 		id integer primary key autoincrement,
 		name text not null,
-		age integer 
+		age integer
 	)`
 
 	_, err := s.db.Exec(createQuery)
@@ -55,19 +47,14 @@ func (s *SQLiteDataStore) init() error {
 	return nil
 }
 
-func (s *SQLiteDataStore) CreateStudent(student Student) (int, error) {
+func (s *SQLiteDataStore) CreateStudent(student Student) error {
 	query := `insert into students (name, age) values (?, ?)`
-	res, err := s.db.Exec(query, student.Name, student.Age)
+	_, err := s.db.Exec(query, student.Name, student.Age)
 	if err != nil {
-		return -1, err
+		return err
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(id), nil
+	return nil
 }
 
 func (s *SQLiteDataStore) GetStudent(studentId int) (*Student, error) {

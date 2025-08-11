@@ -65,7 +65,7 @@ func (s *Server) CreateStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.Store.CreateStudent(student)
+	err := s.Store.CreateStudent(student)
 	if err != nil {
 		s.Logger.Error("error creating student", "error", err)
 		RespondWithError(w, "Error creating student", http.StatusInternalServerError)
@@ -74,7 +74,7 @@ func (s *Server) CreateStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	// TODO: why not set application type content/json
-	_, _ = w.Write([]byte(fmt.Sprintf("Student created with id: %d", id)))
+	_, _ = w.Write([]byte("student created successfully"))
 }
 
 func (s *Server) StudentHandler(w http.ResponseWriter, r *http.Request) {
