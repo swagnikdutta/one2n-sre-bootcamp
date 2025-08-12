@@ -24,7 +24,7 @@ services:
     image: postgres:14.18
     restart: always
     # defining user at this level is one way to resolve the 'user "root" does not exist.' error.
-    user: postgres
+    # user: postgres
 
     # The default location for database files is `/var/lib/postgresql/data`
     volumes:
@@ -47,7 +47,7 @@ services:
     ports:
       - 5432:5432
     healthcheck:
-      # - CMD-SHELL works. Just CMD does not work. It doesn't support the substitutions ${}
+      # - If you're using command substitution ${}, CMD won't work. Use CMD-SHELL.
       #
       # - ["pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] works (all within one "").
       #
@@ -61,8 +61,8 @@ services:
       #
       # This won't be needed if you define the 'user' attribute under the 'db' service definition — which I have
       # commented. Uncomment that, and you should be able to use just ["CMD", "pg_isready"].
-      # test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      test: ["CMD", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      # test: ["CMD", "pg_isready"]
 
       interval: 10s
       timeout: 5s
