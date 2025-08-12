@@ -1,0 +1,72 @@
+name: orchestrator
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: alpine.Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    # with depends_on you can control the order of service startup and shutdown. This is necessary when startup sequence
+    # impacts application's functionality. Compose guarantees dependency services have been started before starting a
+    # dependent service. It waits for dependency services to be ready.
+    depends_on:
+      db:
+        # condition sets condition under which dependency is considered satisfied
+        # service_healthy specifies that the dependency is expected to be healthy (as indicated by healthcheck) before
+        # starting the dependent service.
+        condition: service_healthy
+        # when restart is set to true, compose restarts this service (backend) after it updates the dependency service.
+        restart: true
+  db:
+    image: postgres:14.18
+    restart: always
+    # defining user at this level is one way to resolve the 'user "root" does not exist.' error.
+    user: postgres
+
+    # The default location for database files is `/var/lib/postgresql/data`
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      # The only variable required is POSTGRES_PASSWORD, the rest are optional. This env variable sets the superuser
+      # password for PostgreSQL.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # This optional variable is used in conjunction with POSTGRES_PASSWORD to set a user and its password. This will
+      # create the specified user with superuser power and a database with the same name. If not set, then the default
+      # value of `postgres` will be used.
+      POSTGRES_USER: postgres
+
+      # This optional variable is used to specify a default name for the default database. If it's not specified, then
+      # the value of POSTGRES_USER will be used.
+      POSTGRES_DB: ${POSTGRES_DB}
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    healthcheck:
+      # - CMD-SHELL works. Just CMD does not work. It doesn't support the substitutions ${}
+      #
+      # - ["pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] works (all within one "").
+      #
+      #     Separating the command and flags in two different strings like,
+      #     ["CMD-SHELL", "pg_isready", "-U ${POSTGRES_USER} -d ${POSTGRES_DB}"] doesn't work.
+      #
+      # - pg_isready knows the PGUSER env variable. It does not know POSTGRES_USER.
+      #     Since PGUSER was not defined, pg_isready was called with user 'root' — which did not exist in the DB.
+      #     So we were seeing the 'role "root" does not exist' error.
+      #     Read more: https://stackoverflow.com/q/60193781/3728336
+      #
+      # This won't be needed if you define the 'user' attribute under the 'db' service definition — which I have
+      # commented. Uncomment that, and you should be able to use just ["CMD", "pg_isready"].
+      # test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready"]
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
