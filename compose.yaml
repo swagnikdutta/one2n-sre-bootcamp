@@ -37,7 +37,7 @@ services:
       # This optional variable is used in conjunction with POSTGRES_PASSWORD to set a user and its password. This will
       # create the specified user with superuser power and a database with the same name. If not set, then the default
       # value of `postgres` will be used.
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
 
       # This optional variable is used to specify a default name for the default database. If it's not specified, then
       # the value of POSTGRES_USER will be used.
