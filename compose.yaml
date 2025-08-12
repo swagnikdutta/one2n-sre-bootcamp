@@ -2,9 +2,27 @@ name: orchestrator
 
 services:
   backend:
+    # When both build spec and image attribute is present in the service definition, what compose does is decided by the
+    # pull_policy attribute.
+    # If pull_policy is not present, compose attempts to pull the image. If the image is not found in the platform cache
+    # or in the registry, compose builds the image from source.
+    #
+    # Here's how the other values of pull_policy affect the behaviour of Compose.
+    #   — `always` — Compose always pulls the image from the registry
+    #   — `never` — Compose doesn't pull the image from the registry and relies on the platform cached image. If there is no
+    # cached image, a failure is reported.
+    #   — `missing` — Compose pulls the image only if it's not available in the platform cache. This is the default
+    # option when we are not using the build specification. (alias for if_not_present)
+    #   — `build` — Compose re-builds the image, even if it's present already.
+    # Other options are `daily`, `weekly`, etc.
+    # See https://docs.docker.com/reference/compose-file/services/#pull_policy
+    #
+    # For my use-case, I am choosing not to keep any image attribute and instead rely on build spec.
+    # image: ${IMAGE_NAME}:${IMAGE_TAG}
     build:
       context: .
       dockerfile: alpine.Dockerfile
+
     ports:
       - 8000:8000
     environment:
