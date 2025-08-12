@@ -42,7 +42,7 @@ func TestCreateStudent_Success(t *testing.T) {
 	response := httptest.NewRecorder()
 
 	mockStore := mocks.NewMockStore(ctrl)
-	mockStore.EXPECT().CreateStudent(payload).Return(10, nil)
+	mockStore.EXPECT().CreateStudent(payload).Return(nil)
 
 	s := &student.Server{
 		Store: mockStore,

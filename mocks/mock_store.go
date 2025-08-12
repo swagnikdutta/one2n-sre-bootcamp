@@ -41,12 +41,11 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // CreateStudent mocks base method.
-func (m *MockStore) CreateStudent(s student.Student) (int, error) {
+func (m *MockStore) CreateStudent(s student.Student) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateStudent", s)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CreateStudent indicates an expected call of CreateStudent.
