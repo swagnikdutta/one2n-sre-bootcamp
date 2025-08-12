@@ -34,6 +34,6 @@ docker-run-backend:
 	# docker run --rm -it -e DATABASE_URL=$(DATABASE_URL) -p $(HOST_PORT):$(CONTAINER_PORT) $(IMAGE_NAME):$(IMAGE_TAG)
 	docker compose up -d backend
 
-#generate-mocks:
-#	mockgen -destination=mocks/mock_store.go -package=mocks github.com/swagnikdutta/one2n-sre-bootcamp/student Store
+generate-mocks:
+	mockgen -destination=mocks/mock_store.go -package=mocks github.com/swagnikdutta/one2n-sre-bootcamp/student Store
 
