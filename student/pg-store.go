@@ -23,29 +23,7 @@ func NewPostgresDataStore() *PostgresDataStore {
 		log.Fatalf("unable to connect to database: %v", err)
 	}
 
-	store := &PostgresDataStore{Pool: pool}
-	err = store.init()
-	if err != nil {
-		log.Fatalf("Error initializing database. Error: %v", err)
-		// TODO: When should I panic? vs log.fatal()
-	}
-
-	return store
-}
-
-func (p *PostgresDataStore) init() error {
-	createQuery := `create table if not exists students (
-		id serial primary key,
-		name text not null,
-		age integer 
-	)`
-
-	_, err := p.Pool.Exec(context.Background(), createQuery)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &PostgresDataStore{Pool: pool}
 }
 
 func (p *PostgresDataStore) CreateStudent(s Student) error {
