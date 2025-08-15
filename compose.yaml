@@ -38,6 +38,28 @@ services:
         condition: service_healthy
         # when restart is set to true, compose restarts this service (backend) after it updates the dependency service.
         restart: true
+      migrations:
+        condition: service_completed_successfully
+
+  migrations:
+    image: migrate/migrate
+    # The default entry point for this image is the migrate binary.
+    # You can see it in the image layers — https://hub.docker.com/layers/migrate/migrate/latest/images/sha256-94f6a2ee1c19baddeb924395e378c1f5e42995c3473859d89177325cd6f6a96f
+    # I am overriding that with /bin/sh -c because I want to support expansion of ${DATABASE_URL}
+    entrypoint: ["/bin/sh", "-c"]
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["migrate -path /migrations -database ${DATABASE_URL}?sslmode=disable up"] # works
+    # command: migrate -path /migrations -database ${DATABASE_URL}?sslmode=disable up # does not work. exited with code 2
+    # command: ["migrate", "-path", "/migrations", "-database", "${DATABASE_URL}?sslmode=disable", "up"] # also fails, exited with code 2.
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    # TODO: would migration require a healthcheck? Get back on this
+
   db:
     image: postgres:14.18
     restart: always
