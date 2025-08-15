@@ -35,10 +35,15 @@ services:
         # condition sets condition under which dependency is considered satisfied
         # service_healthy specifies that the dependency is expected to be healthy (as indicated by healthcheck) before
         # starting the dependent service.
+        # service_healthy condition relies on the existence of a healthcheck logic on the dependency service.
         condition: service_healthy
         # when restart is set to true, compose restarts this service (backend) after it updates the dependency service.
         restart: true
       migrations:
+        # The service_completed_successfully condition specifies that a dependency is expected to run to successful
+        # completion before starting a dependent service. A zero-exit code means completion was successful. A non-zero
+        # exit code means otherwise (condition fails). This is mainly for one-shot or init services (migration jobs,
+        # schema creation)
         condition: service_completed_successfully
 
   migrations:
@@ -58,7 +63,6 @@ services:
       db:
         condition: service_healthy
         restart: true
-    # TODO: would migration require a healthcheck? Get back on this
 
   db:
     image: postgres:14.18
