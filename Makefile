@@ -19,9 +19,9 @@ test:
 	go test ./...
 
 migrate-up:
-	migrate -database "$(DB_URL)" -path migrations up
+	migrate -database "$(DATABASE_URL)" -path migrations up
 migrate-down:
-	migrate -database "$(DB_URL)" -path migrations down
+	migrate -database "$(DATABASE_URL)" -path migrations down
 db-up:
 	docker compose up -d db
 db-down:
