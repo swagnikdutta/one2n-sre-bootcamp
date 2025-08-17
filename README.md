@@ -1,13 +1,12 @@
 This is a basic crud app — a part of the [one-2n-sre-bootcamp](https://one2n.io/sre-bootcamp) curriculum.
 
-## Steps to run
-
-- Clone
-- run `make run`
-
 # How to run
 
-```zsh
-docker build -t one2n:0.1.0 .
-docker run --rm -it -e DB_PATH=students.db -p 8000:8000 one2n:0.1.0
-```
+
+- Clone the repo.
+- Install `make`.
+- Run `make docker-run-backend`
+  - This would first run the postgres container. 
+  - Once that's up and healthy, it will run the migrations.
+  - Once the migrations have completed, the backend container (running the main app) would come up.
+
