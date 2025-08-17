@@ -1,4 +1,4 @@
-name: orchestrator
+name: one2n
 
 services:
   backend:
