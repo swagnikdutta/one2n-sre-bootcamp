@@ -17,6 +17,8 @@ coverage:
 	go tool cover -html=coverage.out
 test:
 	go test ./...
+lint:
+	golangci-lint run ./...
 
 migrate-up:
 	migrate -database "$(DATABASE_URL)" -path migrations up
