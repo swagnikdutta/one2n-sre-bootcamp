@@ -1,3 +1,17 @@
+# We are building a simple CI pipeline which will build a docker image and push it to a central repository — docker hub.
+#
+# The CI pipeline should have the following stages
+# - Build API (basically build the project)
+# - Run tests
+# - Perform code linting
+# - Docker login
+# - Docker build and push
+#
+# For all of that, we need appropriate make targets. (Which is done already)
+# The pipeline should only be triggered when changes are made in the code directory — and not in other directories or filepaths. 
+# CI workflow should allow the developer to manually trigger the pipeline when required.
+
+
 name: CI
 
 on:
@@ -5,23 +19,23 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  # to trigger the workflow manually
+  workflow_dispatch:
 
 jobs:
+  # this is the build job
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
-
-      - name: Build
-        # run: go build -v ./...
+          go-version: '1.25'
+      - name: Build application code
         run: make build
-
-      - name: Running unit tests
-        # run: go test -v ./...
+      - name: Run unit tests
         run: make test
+      - name: Lint check
+        run: make lint
 
